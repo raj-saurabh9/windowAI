@@ -2,28 +2,31 @@ const { app, BrowserWindow, globalShortcut } = require('electron');
 const path = require('path');
 const screenshot = require('screenshot-desktop');
 const fs = require('fs');
-const { OpenAI } = require('openai');
+const { OpenAI } = require('openai'); // Import OpenAI
 
+// Read config.json to get the OpenAI API key
 let config;
 try {
   const configPath = path.join(__dirname, 'config.json');
   const configData = fs.readFileSync(configPath, 'utf8');
   config = JSON.parse(configData);
-  
-  if (!config.apiKey) {
+
+  if (!config.OPENAI_API_KEY) {
     throw new Error("API key is missing in config.json");
   }
-  
+
   // Set default model if not specified
   if (!config.model) {
-    config.model = "gpt-4o-mini";
+    config.model = "gpt-4"; // Default model if not provided
     console.log("Model not specified in config, using default:", config.model);
   }
 } catch (err) {
   console.error("Error reading config:", err);
   app.quit();
 }
-const openai = new OpenAI({ apiKey: config.apiKey });
+
+// Initialize OpenAI client using the API key from config.json
+const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
 
 let mainWindow;
 let screenshots = [];
@@ -78,7 +81,7 @@ async function processScreenshots() {
       });
     }
 
-    // Make the request
+    // Make the request to OpenAI API
     const response = await openai.chat.completions.create({
       model: config.model,
       messages: [{ role: "user", content: messages }],
@@ -153,6 +156,16 @@ function createWindow() {
   // Ctrl+Shift+R => reset
   globalShortcut.register('CommandOrControl+Shift+R', () => {
     resetProcess();
+  });
+
+  // Command+H => Hide the window
+  globalShortcut.register('CommandOrControl+H', () => {
+    mainWindow.hide();
+  });
+
+  // Command+Shift+H => Show the window
+  globalShortcut.register('CommandOrControl+Shift+H', () => {
+    mainWindow.show();
   });
 }
 

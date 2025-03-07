@@ -1,4 +1,5 @@
 {
-  "apiKey": "YOUR_OPENAI_API_KEY",
-  "model": "PREFERRED_MODEL_NAME"
+  "OPENAI_API_KEY": "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"
+  ,
+  "model": "gpt-3.5-turbo"
 }
