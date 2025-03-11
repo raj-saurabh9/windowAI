@@ -1,14 +1,14 @@
-# OA Coder
+#To make it run and working connect with owner 
 
-OA Coder is an Electron application that captures screenshots and leverages the OpenAI API to analyze them. It can solve questions, generate code, or provide detailed answers based on screenshots. The app supports both single screenshot processing and multi-page mode for capturing multiple images before analysis.
+# WindowAI
+
+WindowAI is an  application that was designed tp captures screenshots and leverages the OpenAI API to analyze them but currently it is  textbased Searching . It can solve questions, generate code, or provide detailed answers based on screenshots. The app supports both single screenshot processing and multi-page mode for capturing multiple images before analysis.
 
 ## Features
 
-- **Screenshot Capture:** Use global keyboard shortcuts to capture the screen.
-- **OpenAI Integration:** Send captured screenshots to OpenAI's chat API for automated analysis.
-- **Multi-Page Mode:** Combine multiple screenshots for questions spanning several pages.
-- **Customizable UI:** Transparent, always-on-top window with an instruction banner and markdown-rendered responses.
+- **Screenshot Capture:** Use global keyboard shortcuts to capture the screen. (Upcoming) pls share open PRs for main branch if free
 - **Global Shortcuts:** Easily control the application using keyboard shortcuts.
+- - **Text based AI Searches :** Easily control the application using keyboard shortcuts.
 
 ## Prerequisites
 
@@ -21,8 +21,7 @@ OA Coder is an Electron application that captures screenshots and leverages the 
 1. **Clone the repository:**
 
    ```
-   git clone https://github.com/archangel0x01/oa-coder.git
-   cd oa-coder
+   git clone (https://github.com/raj-saurabh9/windowAI)
    ```
 2. **Install the dependencies:**
    ```
@@ -42,20 +41,18 @@ OA Coder is an Electron application that captures screenshots and leverages the 
 ## Usage
 
 1. **Start the Application:**
-    Run the following command to launch OA Coder:
+    Run the following command 
     ```
     npm start
     ```
 2. **Global Keyboard Shortcuts:**
 
-    - Ctrl+Shift+S: Capture a screenshot and process it immediately. In multi-page mode, this shortcut finalizes the session and sends all captured screenshots for processing.
-    - Ctrl+Shift+A: Capture an additional screenshot in multi-page mode. The instruction banner will remind you of the mode and available shortcuts.
-    - Ctrl+Shift+R: Reset the current process, clearing all captured screenshots and any displayed results.
+    - Option+Shift+L: Hides the windowAI / shows the windowAI 
+    - Option+Shift+K: Quit
+    - Option+Shift+ <,>,^: move pannel
 
 
 ## Status
 
 This program is still under development. Some features may not be fully implemented, and there might be bugs or incomplete functionality. Your feedback and contributions are welcome as we work towards a more stable release.
 
-
-**Personal Thoughts**: Inspired by interviewcoder.co but didn't like the idea of gatekeeping **cheating** softwares behind paywalls. Like you're literally cheating wtf man? And this might help incompetent software engineers join the company and eat it from the inside forcing companies to realise that Leetcode isn't the only way people should get hired and there are other alternative ways to assess a candidate's abilities.
