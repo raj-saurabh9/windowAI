@@ -9,8 +9,12 @@
     "@google-cloud/vision": "^4.3.3",
     "axios": "^1.8.2",
     "electron": "^28.1.0",
-    "openai": "^4.24.1",
+    "jimp": "^1.6.0",
+    "openai": "^4.86.2",
+    "os": "^0.1.2",
     "screenshot-desktop": "^1.15.0",
-    "tesseract.js": "^6.0.0"
+    "sharp": "^0.33.5",
+    "tesseract.js": "^6.0.0",
+    "tmp": "^0.2.3"
   }
 }

@@ -1,5 +1,14 @@
 {
-  "OPENAI_API_KEY": ""
-  ,
-  "model": "gpt-3.5-turbo"
+  "OPENAI_API_KEY": "",
+"model": "gpt-4o-mini",
+
+
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "### Problem Statement:\nThe problem involves simulating the movement of fishes in two directions...\n\n### Approach:\n1. Use a stack to keep track of the fishes that are still alive.\n2. Iterate through the array of fishes...\n\n### Implementation:\n```cpp\n#include <iostream>\n#include <vector>\n#include <stack>\nusing namespace std;\n\nvector<int> survivingFishes(const vector<int>& direction, const vector<int>& size) {\n    stack<pair<int, int>> fishStack; // Stack to keep track of fishes\n    \n    for (int i = 0; i < direction.size(); ++i) {\n        if (direction[i] > 0) {\n            fishStack.push({direction[i], size[i]});\n        } else {\n            while (!fishStack.empty() && fishStack.top().first > 0) {\n                if (fishStack.top().second < size[i]) {\n                    fishStack.pop();\n                } else {\n                    break;\n                }\n            }\n        }\n    }\n    \n    vector<int> result;\n    while (!fishStack.empty()) {\n        result.push_back(fishStack.top().second);\n        fishStack.pop();\n    }\n    reverse(result.begin(), result.end());\n    return result;\n}\n\nint main() {\n    vector<int> direction = {-1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1};\n    vector<int> size = {10, 11, 8, 5, 3, 4, 6, 9, 2, 1, 7};\n    \n    vector<int> result = survivingFishes(direction, size);\n    \n    cout << \"Surviving fishes: \";\n    for (int fish : result) {\n        cout << fish << \" \";\n    }\n    cout << endl;\n    return 0;\n}\n```\n\n### Explanation:\n- The code initializes a stack to process the fish...\n"
+      }
+    }
+  ]
 }

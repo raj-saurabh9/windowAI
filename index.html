@@ -4,202 +4,116 @@
   <meta charset="utf-8"/>
   <title>OA Coder</title>
   <style>
-    html {
+    html, body {
       width: 100%;
       height: 100%;
-      background: none;
-    }
-    
-    body {
-      margin: 0; 
+      margin: 0;
       padding: 0;
-      width: 100%;
-      height: 100%;
       background: none;
       font-family: Arial, sans-serif;
       overflow: hidden;
-      position: relative;
     }
-    
-    /* Improved instruction banner */
+
+    #chat-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 400px;
+      max-height: 500px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      backdrop-filter: blur(5px);
+      color: white;
+    }
+
     #instruction-banner {
-      position: fixed;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.85);
-      color: #fff;
-      padding: 8px 15px;
+      text-align: center;
       font-size: 14px;
-      border-radius: 0 0 8px 8px;
-      z-index: 9999;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-      transition: opacity 0.3s ease;
-      user-select: none;
+      margin-bottom: 5px;
+      color: #bbb;
     }
-    
-    #response-overlay {
-      position: fixed;
-      top: 0; 
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.85);
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s ease, visibility 0.3s;
-      z-index: 9998;
-      backdrop-filter: blur(3px);
+
+   #response-box {
+  font-size: 12px;
+  flex-grow: 1;
+  max-height: 500px; /* Increased max height */
+  overflow-y: auto; /* Enable scrolling */
+  background: rgba(30, 30, 30, 0.8);
+  border-radius: 6px;
+  padding: 10px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  font-family: monospace;
+  transition: max-height 0.3s ease-in-out; /* Smooth expansion */
+}
+
+    #response {
+  font-size: 12px; /* Adjust as needed */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+
+    #user-input {
+      width: calc(100% - 50px);
+      padding: 8px;
+      border: none;
+      border-radius: 5px;
+      outline: none;
+      background: rgba(255,255,255,0.1);
+      color: white;
     }
-    
-    #response-overlay.visible {
-      opacity: 1;
-      visibility: visible;
-    }
-    
-    #response-box {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 90%;
-      max-width: 900px;
-      max-height: 90vh;
-      overflow-y: auto;
-      background: rgba(25,25,25,0.95);
-      color: #fff;
-      padding: 25px;
-      box-sizing: border-box;
-      font-size: 15px;
-      line-height: 1.5;
-      border-radius: 8px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-    }
-    
-    #response-box::-webkit-scrollbar {
-      width: 8px;
-    }
-    
-    #response-box::-webkit-scrollbar-track {
-      background: rgba(0,0,0,0.1);
-      border-radius: 4px;
-    }
-    
-    #response-box::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.3);
-      border-radius: 4px;
-    }
-    
-    pre {
-      background: rgba(40,40,40,0.95);
-      color: #f0f0f0;
-      padding: 15px;
-      border-radius: 6px;
-      white-space: pre;
-      overflow-x: auto;
-      margin: 1em 0;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    code {
-      font-family: 'Fira Code', Consolas, 'Courier New', monospace;
-      background: rgba(60,60,60,0.95);
-      color: #fff;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-    
-    #response-box p {
-      margin: 0 0 10px 0;
-    }
-    
-    #response-box p:last-child {
-      margin-bottom: 0;
-    }
-    
-    .error-message {
-      color: #ff4444;
-      background: rgba(255,68,68,0.1);
-      padding: 15px;
-      border-radius: 6px;
-      border-left: 4px solid #ff4444;
-      margin: 10px 0;
+
+    #submit-button {
+      padding: 8px;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div id="instruction-banner"></div>
-  <div id="response-overlay">
-    <div id="response-box"></div>
+<div id="chat-container">
+  <div id="instruction-banner">Option+Shift+L: Hide | Option+Shift+Enter: Search</div>
+  <pre id="response-box"></pre>
+  <div style="display: flex; gap: 5px; margin-top: 5px;">
+    <input type="text" id="user-input" placeholder="Type here..." />
+    <button id="submit-button">Send</button>
   </div>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script>
+<script>
     const { ipcRenderer } = require('electron');
-    
-    marked.setOptions({
-      sanitize: true,
-      breaks: true,
-      gfm: true
-    });
-    
-    const showOverlay = () => {
-      const overlay = document.getElementById('response-overlay');
-      overlay.classList.add('visible');
-    };
-    
-    const hideOverlay = () => {
-      const overlay = document.getElementById('response-overlay');
-      overlay.classList.remove('visible');
-    };
-    
-    const updateBanner = (text, show = true) => {
-      const banner = document.getElementById('instruction-banner');
-      banner.style.opacity = show ? '1' : '0';
-      if (text) banner.textContent = text;
-    };
-    
-    const handlers = {
-      'analysis-result': (event, result) => {
-        showOverlay();
-        document.getElementById('response-box').innerHTML = marked.parse(result);
-        updateBanner("Ctrl+Shift+R: Repeat process");
-      },
-      
-      'error': (event, error) => {
-        showOverlay();
-        document.getElementById('response-box').innerHTML = 
-          `<div class="error-message">
-            <strong>Error:</strong> ${error}
-            <br><small>Press Ctrl+Shift+R to try again</small>
-          </div>`;
-      },
-      
-      'update-instruction': (event, instruction) => {
-        updateBanner(instruction, true);
-      },
-      
-      'hide-instruction': () => {
-        updateBanner('', false);
-      },
-      
-      'clear-result': () => {
-        document.getElementById('response-box').innerHTML = "";
-        hideOverlay();
+
+    document.getElementById('submit-button').addEventListener('click', () => {
+      const userInput = document.getElementById('user-input').value.trim();
+      if (userInput) {
+        ipcRenderer.send('user-input', userInput);
+        document.getElementById('user-input').value = '';
       }
+    });
+
+ const responseBox = document.getElementById('response-box');
+
+ipcRenderer.on('chatgpt-response', (event, response) => {
+  responseBox.innerHTML = `<p style="font-size: 12px; line-height: 1.4;">${response}</p>`;
+
+  // Dynamically adjust height based on response length
+  let newHeight = Math.min(500, Math.max(150, response.length / 3)) + 'px';
+  responseBox.style.maxHeight = newHeight;
+});
+
+    const updateBanner = (text) => {
+      document.getElementById('instruction-banner').textContent = text;
     };
-    
-    Object.entries(handlers).forEach(([channel, handler]) => {
-      ipcRenderer.on(channel, handler);
-    });
-    
-    window.addEventListener('unload', () => {
-      Object.keys(handlers).forEach(channel => {
-        ipcRenderer.removeAllListeners(channel);
-      });
-    });
-    
-    updateBanner("Ctrl+Shift+S: Screenshot | Ctrl+Shift+A: Multi-mode");
   </script>
 </body>
 </html>

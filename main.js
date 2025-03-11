@@ -1,8 +1,7 @@
-const { app, BrowserWindow, globalShortcut } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain } = require('electron');
 const path = require('path');
-const screenshot = require('screenshot-desktop');
 const fs = require('fs');
-const axios = require('axios');
+const { OpenAI } = require('openai');
 
 let config;
 try {
@@ -14,9 +13,8 @@ try {
     throw new Error("API key is missing in config.json");
   }
 
-  // Set default model if not specified
   if (!config.model) {
-    config.model = "gpt-4"; // Using GPT-4 as default
+    config.model = "gpt-4o-mini";
     console.log("Model not specified in config, using default:", config.model);
   }
 } catch (err) {
@@ -24,225 +22,113 @@ try {
   app.quit();
 }
 
+const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
+
 let mainWindow;
-let screenshots = [];
-let multiPageMode = false;
-
-function updateInstruction(instruction) {
-  if (mainWindow?.webContents) {
-    mainWindow.webContents.send('update-instruction', instruction);
-  }
-}
-
-function hideInstruction() {
-  if (mainWindow?.webContents) {
-    mainWindow.webContents.send('hide-instruction');
-  }
-}
-
-// Step 1: Capture screenshot and extract text
-async function captureScreenshot() {
-  try {
-    console.log("Capturing screenshot...");
-    hideInstruction();
-    mainWindow.hide();
-    await new Promise(res => setTimeout(res, 200));
-
-    const timestamp = Date.now();
-    const imagePath = path.join(app.getPath('pictures'), `screenshot_${timestamp}.png`);
-    await screenshot({ filename: imagePath });
-
-    const imageBuffer = fs.readFileSync(imagePath);
-    const base64Image = imageBuffer.toString('base64');
-    console.log("Screenshot captured successfully and converted to base64.");
-
-    // Returning image base64
-    mainWindow.show();
-    return base64Image;
-  } catch (err) {
-    mainWindow.show();
-    if (mainWindow.webContents) {
-      mainWindow.webContents.send('error', err.message);
-    }
-    throw err;
-  }
-}
-
-// Step 2: Process the screenshots and send extracted text to ChatGPT (OpenAI API)
-async function processScreenshots() {
-  try {
-    console.log("Sending text to ChatGPT API...");
-    for (const screenshotData of screenshots) {
-      const extractedText = screenshotData.extractedText || "No text extracted"; // Get the text
-
-      // Define the OpenAI API endpoint
-      const endpoint = `https://api.openai.com/v1/completions`;
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.OPENAI_API_KEY}`
-      };
-
-      // Prepare the request payload
-      const data = {
-        model: config.model,
-        prompt: extractedText,
-        max_tokens: 500,  // Limit the response length
-      };
-
-      console.log("Making API request to ChatGPT...");
-
-      // Make the request
-      const response = await axios.post(endpoint, data, { headers });
-
-      console.log("API response received.");
-      console.log("Response status:", response.status);
-      console.log("Response data:", response.data);
-
-      // Extract and display the response from ChatGPT
-      const content = response.data.choices[0].text;
-      if (content) {
-        console.log("Extracted content from response:", content);
-
-        // Send the extracted content to the renderer
-        mainWindow.webContents.send('analysis-result', content);
-      } else {
-        console.error("No content found in API response.");
-        mainWindow.webContents.send('error', "No content found in API response.");
-      }
-    }
-  } catch (err) {
-    console.error("Error processing screenshots:", err);
-    if (mainWindow.webContents) {
-      mainWindow.webContents.send('error', err.message);
-    }
-  }
-}
-
-// Reset everything
-function resetProcess() {
-  screenshots = [];
-  multiPageMode = false;
-  mainWindow.webContents.send('clear-result');
-  updateInstruction("Ctrl+Shift+S: Screenshot | Ctrl+Shift+A: Multi-mode");
-}
 
 function createWindow() {
+  console.log("Creating main application window...");
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 600,
+    height: 300,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
     },
     frame: false,
-    transparent: true, // Make window transparent
-    backgroundColor: 'rgba(0, 0, 0, 0)', // Set background to fully transparent
+    transparent: true,
     alwaysOnTop: true,
-    paintWhenInitiallyHidden: true,
-    contentProtection: true,
-    type: 'toolbar',
   });
 
-  mainWindow.loadFile('index.html');
   mainWindow.setContentProtection(true);
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   mainWindow.setAlwaysOnTop(true, 'screen-saver', 1);
+  mainWindow.loadFile('index.html');
 
-  // Ctrl+Shift+S => single or final screenshot
-  globalShortcut.register('CommandOrControl+Shift+S', async () => {
-    try {
-      const base64Image = await captureScreenshot();
-      screenshots.push({ base64Image });
-      await processScreenshots();
-    } catch (error) {
-      console.error("Ctrl+Shift+S error:", error);
+  console.log("Registering global shortcuts...");
+  globalShortcut.register('Option+Shift+Enter', async () => {
+    mainWindow.webContents.send('submit-search');
+    console.log("Shortcut triggered: Submit search");
+  });
+
+  globalShortcut.register('Option+Shift+K', () => {
+    console.log("Terminating application...");
+    app.quit();
+  });
+
+  globalShortcut.register('Option+Shift+L', () => {
+    if (mainWindow.isVisible()) {
+      console.log("Hiding window...");
+      mainWindow.hide();
+    } else {
+      console.log("Showing window...");
+      mainWindow.show();
     }
   });
 
-  // Ctrl+Shift+A => multi-page mode
-  globalShortcut.register('CommandOrControl+Shift+A', async () => {
-    try {
-      if (!multiPageMode) {
-        multiPageMode = true;
-        updateInstruction("Multi-mode: Ctrl+Shift+A to add, Ctrl+Shift+S to finalize");
-      }
-      const base64Image = await captureScreenshot();
-      screenshots.push({ base64Image });
-      updateInstruction("Multi-mode: Ctrl+Shift+A to add, Ctrl+Shift+S to finalize");
-    } catch (error) {
-      console.error("Ctrl+Shift+A error:", error);
-    }
-  });
+  let moveSpeed = 50;
+  globalShortcut.register('Option+Shift+Up', () => moveWindow(0, -moveSpeed));
+  globalShortcut.register('Option+Shift+Down', () => moveWindow(0, moveSpeed));
+  globalShortcut.register('Option+Shift+Left', () => moveWindow(-moveSpeed, 0));
+  globalShortcut.register('Option+Shift+Right', () => moveWindow(moveSpeed, 0));
 
-  // Ctrl+Shift+R => reset
-  globalShortcut.register('CommandOrControl+Shift+R', () => {
-    resetProcess();
-  });
-
-  // Command+H => Hide the window
-  globalShortcut.register('CommandOrControl+H', () => {
-    mainWindow.hide();
-  });
-
-  // Command+Shift+H => Show the window
-  globalShortcut.register('CommandOrControl+Shift+H', () => {
-    mainWindow.show();
-  });
-
-  // Move window with large distance (Arrow keys with Ctrl or Shift)
-  let moveSpeed = 100; // Increase the distance moved
-  globalShortcut.register('CommandOrControl+Up', () => {
-    let position = mainWindow.getBounds();
+  function moveWindow(deltaX, deltaY) {
+    let bounds = mainWindow.getBounds();
     mainWindow.setBounds({
-      x: position.x,
-      y: position.y - moveSpeed,
-      width: position.width,
-      height: position.height
+      x: bounds.x + deltaX,
+      y: bounds.y + deltaY,
+      width: bounds.width,
+      height: bounds.height
     });
-  });
-
-  globalShortcut.register('CommandOrControl+Down', () => {
-    let position = mainWindow.getBounds();
-    mainWindow.setBounds({
-      x: position.x,
-      y: position.y + moveSpeed,
-      width: position.width,
-      height: position.height
-    });
-  });
-
-  globalShortcut.register('CommandOrControl+Left', () => {
-    let position = mainWindow.getBounds();
-    mainWindow.setBounds({
-      x: position.x - moveSpeed,
-      y: position.y,
-      width: position.width,
-      height: position.height
-    });
-  });
-
-  globalShortcut.register('CommandOrControl+Right', () => {
-    let position = mainWindow.getBounds();
-    mainWindow.setBounds({
-      x: position.x + moveSpeed,
-      y: position.y,
-      width: position.width,
-      height: position.height
-    });
-  });
+    console.log(`Window moved to: x=${bounds.x + deltaX}, y=${bounds.y + deltaY}`);
+  }
 }
 
-app.whenReady().then(createWindow);
+ipcMain.on('user-input', async (event, prompt) => {
+  try {
+    console.log("Received search request:", prompt);
+    let modifiedPrompt = `Analyze the following question: "${prompt}"\n\n`;
+
+    if (prompt.toLowerCase().includes("design") || prompt.toLowerCase().includes("architecture")) {
+      modifiedPrompt += "If it's a system design question, give a Low-Level Design (LLD) solution in Java with proper classes, methods, and relationships.";
+    } else {
+      modifiedPrompt += "If it's a coding problem, provide an optimized C++ using namespace std ,solution with comments and an explanation.";
+    }
+
+//    const response = await openai.chat.completions.create({
+//      model: config.model,
+//      messages: [{ role: "user", content: modifiedPrompt }],
+//      max_tokens: 800,
+//    });
+
+const response = config;
+    console.log("OpenAI response received" , response.choices[0].message.content);
+    event.reply('chatgpt-response', response.choices[0].message.content);
+  } catch (err) {
+    console.error("Error processing search:", err);
+    event.reply('chatgpt-response', "Error: " + err.message);
+  }
+});
+
+app.whenReady().then(() => {
+  console.log("Application is ready");
+  createWindow();
+
+  ipcMain.on('user-input', (event, text) => {
+    console.log("User entered:", text);
+    mainWindow.webContents.send('search-chatgpt', text);
+  });
+});
 
 app.on('window-all-closed', () => {
+  console.log("All windows closed, unregistering shortcuts...");
   globalShortcut.unregisterAll();
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
+    console.log("Recreating main window...");
     createWindow();
   }
 });
