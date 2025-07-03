@@ -30,7 +30,7 @@ function createWindow() {
   console.log("Creating main application window...");
   mainWindow = new BrowserWindow({
     width: 600,
-    height: 300,
+    height: 800,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -95,13 +95,13 @@ ipcMain.on('user-input', async (event, prompt) => {
       modifiedPrompt += "If it's a coding problem, provide an optimized C++ using namespace std ,solution with comments and an explanation.";
     }
 
-//    const response = await openai.chat.completions.create({
-//      model: config.model,
-//      messages: [{ role: "user", content: modifiedPrompt }],
-//      max_tokens: 800,
-//    });
+    const response = await openai.chat.completions.create({
+      model: config.model,
+      messages: [{ role: "user", content: modifiedPrompt }],
+      max_tokens: 800,
+    });
 
-const response = config;
+//const response = config;
     console.log("OpenAI response received" , response.choices[0].message.content);
     event.reply('chatgpt-response', response.choices[0].message.content);
   } catch (err) {

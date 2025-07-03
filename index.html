@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>OA Coder</title>
+  <title>windowAI</title>
   <style>
     html, body {
       width: 100%;
@@ -19,7 +19,7 @@
       bottom: 20px;
       right: 20px;
       width: 400px;
-      max-height: 500px;
+      max-height: 700px; /* Increased max height */
       background: rgba(0,0,0,0.7);
       border-radius: 10px;
       padding: 10px;
@@ -37,28 +37,27 @@
       color: #bbb;
     }
 
-   #response-box {
-  font-size: 12px;
-  flex-grow: 1;
-  max-height: 500px; /* Increased max height */
-  overflow-y: auto; /* Enable scrolling */
-  background: rgba(30, 30, 30, 0.8);
-  border-radius: 6px;
-  padding: 10px;
-  line-height: 1.4;
-  white-space: pre-wrap;
-  font-family: monospace;
-  transition: max-height 0.3s ease-in-out; /* Smooth expansion */
-}
+    #response-box {
+      font-size: 12px;
+      flex-grow: 1;
+      max-height: 1000px; /* Increased max height */
+      overflow-y: auto;
+      background: rgba(30, 30, 30, 0.8);
+      border-radius: 6px;
+      padding: 10px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      font-family: monospace;
+      transition: max-height 0.3s ease-in-out;
+    }
 
-    #response {
-  font-size: 12px; /* Adjust as needed */
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  max-width: 100%;
-  overflow: hidden;
-}
-
+<!--    #response {-->
+<!--      font-size: 12px;-->
+<!--      word-wrap: break-word;-->
+<!--      overflow-wrap: break-word;-->
+<!--      max-width: 100%;-->
+<!--      overflow: auto;-->
+<!--    }-->
 
     #user-input {
       width: calc(100% - 50px);
@@ -101,19 +100,19 @@
       }
     });
 
- const responseBox = document.getElementById('response-box');
+    const responseBox = document.getElementById('response-box');
 
-ipcRenderer.on('chatgpt-response', (event, response) => {
-  responseBox.innerHTML = `<p style="font-size: 12px; line-height: 1.4;">${response}</p>`;
+    ipcRenderer.on('chatgpt-response', (event, response) => {
+      responseBox.textContent = response;
 
-  // Dynamically adjust height based on response length
-  let newHeight = Math.min(500, Math.max(150, response.length / 3)) + 'px';
-  responseBox.style.maxHeight = newHeight;
-});
+      // Adjust height dynamically up to 700px
+      let newHeight = Math.min(700, Math.max(200, response.length / 2)) + 'px';
+      responseBox.style.maxHeight = newHeight;
+    });
 
     const updateBanner = (text) => {
       document.getElementById('instruction-banner').textContent = text;
     };
-  </script>
+</script>
 </body>
 </html>
