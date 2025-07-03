@@ -18,8 +18,8 @@
       position: fixed;
       bottom: 20px;
       right: 20px;
-      width: 400px;
-      max-height: 700px; /* Increased max height */
+      width: 600px;
+      max-height: 900px; /* Increased max height */
       background: rgba(0,0,0,0.7);
       border-radius: 10px;
       padding: 10px;
@@ -49,15 +49,9 @@
       white-space: pre-wrap;
       font-family: monospace;
       transition: max-height 0.3s ease-in-out;
+      background: white;          /* ✅ White background */
+      color: black;
     }
-
-<!--    #response {-->
-<!--      font-size: 12px;-->
-<!--      word-wrap: break-word;-->
-<!--      overflow-wrap: break-word;-->
-<!--      max-width: 100%;-->
-<!--      overflow: auto;-->
-<!--    }-->
 
     #user-input {
       width: calc(100% - 50px);
@@ -81,7 +75,7 @@
 </head>
 <body>
 <div id="chat-container">
-  <div id="instruction-banner">Option+Shift+L: Hide | Option+Shift+Enter: Search</div>
+  <div id="instruction-banner">Option+Shift+L: Hide | Option+Shift+B: Color</div>
   <pre id="response-box"></pre>
   <div style="display: flex; gap: 5px; margin-top: 5px;">
     <input type="text" id="user-input" placeholder="Type here..." />
@@ -109,6 +103,21 @@
       let newHeight = Math.min(700, Math.max(200, response.length / 2)) + 'px';
       responseBox.style.maxHeight = newHeight;
     });
+
+let isBlack = false;
+
+ipcRenderer.on('toggle-color', () => {
+  const responseBox = document.getElementById('response-box');
+  isBlack = !isBlack;
+
+  if (isBlack) {
+    responseBox.style.background = 'white'; // Blue
+    responseBox.style.color = 'black';
+  } else {
+    responseBox.style.background = 'black'; // Black
+    responseBox.style.color = 'white';
+  }
+});
 
     const updateBanner = (text) => {
       document.getElementById('instruction-banner').textContent = text;

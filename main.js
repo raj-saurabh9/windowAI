@@ -29,8 +29,8 @@ let mainWindow;
 function createWindow() {
   console.log("Creating main application window...");
   mainWindow = new BrowserWindow({
-    width: 600,
-    height: 800,
+    width: 900,
+    height: 1200,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -65,6 +65,11 @@ function createWindow() {
       mainWindow.show();
     }
   });
+
+    globalShortcut.register('Option+Shift+B', () => {
+      console.log("Toggling response box color");
+      mainWindow.webContents.send('toggle-color');
+    });
 
   let moveSpeed = 50;
   globalShortcut.register('Option+Shift+Up', () => moveWindow(0, -moveSpeed));
