@@ -27,10 +27,20 @@ const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
 let mainWindow;
 
 function createWindow() {
+ const { screen } = require('electron');
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const screenWidth = primaryDisplay.workAreaSize.width;
+  const screenHeight = primaryDisplay.workAreaSize.height;
+
+  const winWidth = 490;
+  const winHeight = 110;
+
   console.log("Creating main application window...");
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 1200,
+    width: winWidth,
+    height: winHeight,
+    x: 50,
+    y: screenHeight - winHeight,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -97,8 +107,10 @@ ipcMain.on('user-input', async (event, prompt) => {
     if (prompt.toLowerCase().includes("design") || prompt.toLowerCase().includes("architecture")) {
       modifiedPrompt += "If it's a system design question, give a Low-Level Design (LLD) solution in Java with proper classes, methods, and relationships.";
     } else {
-      modifiedPrompt += "If it's a coding problem, provide an optimized C++ using namespace std ,solution with comments and an explanation.";
+      modifiedPrompt += "If it's a coding problem, provide an optimized C++ using namespace std ,solution with comments space time complexity and an explanation";
     }
+    modifiedPrompt += "\nKeep the total response under 800 tokens.";
+
 
     const response = await openai.chat.completions.create({
       model: config.model,
@@ -106,14 +118,32 @@ ipcMain.on('user-input', async (event, prompt) => {
       max_tokens: 800,
     });
 
-//const response = config;
-    console.log("OpenAI response received" , response.choices[0].message.content);
-    event.reply('chatgpt-response', response.choices[0].message.content);
-  } catch (err) {
-    console.error("Error processing search:", err);
-    event.reply('chatgpt-response', "Error: " + err.message);
+//     const response = config;
+
+
+        console.log("OpenAI response received" , response.choices[0].message.content);
+        event.reply('chatgpt-response', response.choices[0].message.content);
+     } catch (err) {
+       console.error("Error processing search:", err);
+       event.reply('chatgpt-response', "Error: " + err.message);
+     }
+
+});
+
+
+ipcMain.on('adjust-window-height', (event, newHeight) => {
+  if (mainWindow) {
+    const bounds = mainWindow.getBounds();
+    mainWindow.setBounds({
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: Math.round(newHeight)
+    });
+    console.log(`Adjusted window height to ${newHeight}px`);
   }
 });
+
 
 app.whenReady().then(() => {
   console.log("Application is ready");

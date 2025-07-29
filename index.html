@@ -14,6 +14,12 @@
       overflow: hidden;
     }
 
+ * {
+    background-color: white !important;
+    color: black !important;
+    border-color: white !important;
+  }
+
     #chat-container {
       position: fixed;
       bottom: 20px;
@@ -75,7 +81,7 @@
 </head>
 <body>
 <div id="chat-container">
-  <div id="instruction-banner">Option+Shift+L: Hide | Option+Shift+B: Color</div>
+  <div id="instruction-banner">Option+Shift+ L: Hide|B: Color|H:highlight</div>
   <pre id="response-box"></pre>
   <div style="display: flex; gap: 5px; margin-top: 5px;">
     <input type="text" id="user-input" placeholder="Type here..." />
@@ -84,44 +90,58 @@
 </div>
 
 <script>
-    const { ipcRenderer } = require('electron');
 
-    document.getElementById('submit-button').addEventListener('click', () => {
-      const userInput = document.getElementById('user-input').value.trim();
-      if (userInput) {
-        ipcRenderer.send('user-input', userInput);
-        document.getElementById('user-input').value = '';
-      }
-    });
+   const { ipcRenderer } = require('electron');
 
-    const responseBox = document.getElementById('response-box');
+   document.getElementById('submit-button').addEventListener('click', () => {
+     const userInput = document.getElementById('user-input').value.trim();
+     if (userInput) {
+       ipcRenderer.send('user-input', userInput);
+       document.getElementById('user-input').value = '';
+     }
+   });
 
-    ipcRenderer.on('chatgpt-response', (event, response) => {
-      responseBox.textContent = response;
+   const responseBox = document.getElementById('response-box');
 
-      // Adjust height dynamically up to 700px
-      let newHeight = Math.min(700, Math.max(200, response.length / 2)) + 'px';
-      responseBox.style.maxHeight = newHeight;
-    });
+   ipcRenderer.on('chatgpt-response', (event, response) => {
+     responseBox.textContent = response;
+
+     // Adjust height dynamically up to 700px
+     let newHeight = Math.min(700, Math.max(200, response.length / 2)) + 'px';
+     responseBox.style.maxHeight = newHeight;
+   });
 
 let isBlack = false;
 
 ipcRenderer.on('toggle-color', () => {
-  const responseBox = document.getElementById('response-box');
-  isBlack = !isBlack;
+ const responseBox = document.getElementById('response-box');
+ isBlack = !isBlack;
 
-  if (isBlack) {
-    responseBox.style.background = 'white'; // Blue
-    responseBox.style.color = 'black';
-  } else {
-    responseBox.style.background = 'black'; // Black
-    responseBox.style.color = 'white';
-  }
+ if (isBlack) {
+   responseBox.style.background = 'white'; // Blue
+   responseBox.style.color = 'black';
+ } else {
+   responseBox.style.background = 'black'; // Black
+   responseBox.style.color = 'white';
+ }
+});
+ipcRenderer.on('chatgpt-response', (event, response) => {
+  responseBox.textContent = response;
+
+  const lineCount = response.split('\n').length;
+  const approxLineHeight = 18; // adjust if needed
+  const baseHeight = 150; // input + banner height
+  const newHeight = Math.min(1000, baseHeight + lineCount * approxLineHeight); // cap max height
+
+  ipcRenderer.send('adjust-window-height', newHeight); // 🚀 send new height
+
+  // Still adjust internal box
+  responseBox.style.maxHeight = (newHeight - baseHeight) + 'px';
 });
 
-    const updateBanner = (text) => {
-      document.getElementById('instruction-banner').textContent = text;
-    };
+   const updateBanner = (text) => {
+     document.getElementById('instruction-banner').textContent = text;
+   };
 </script>
 </body>
 </html>
