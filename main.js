@@ -2,8 +2,20 @@ const { app, BrowserWindow, globalShortcut, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { OpenAI } = require('openai');
+const { clipboard } = require('electron');
+
 
 let config;
+let lastText = clipboard.readText();
+setInterval(() => {
+  const currentText = clipboard.readText();
+  if (currentText && currentText !== lastText) {
+    lastText = currentText;
+    console.log("Clipboard changed:", currentText);
+    mainWindow.webContents.send('append-to-input', currentText);
+  }
+}, 800);
+
 try {
   const configPath = path.join(__dirname, 'config.json');
   const configData = fs.readFileSync(configPath, 'utf8');
@@ -32,8 +44,8 @@ function createWindow() {
   const screenWidth = primaryDisplay.workAreaSize.width;
   const screenHeight = primaryDisplay.workAreaSize.height;
 
-  const winWidth = 490;
-  const winHeight = 110;
+const winWidth = 601;
+const winHeight = 290;
 
   console.log("Creating main application window...");
   mainWindow = new BrowserWindow({
@@ -76,12 +88,12 @@ function createWindow() {
     }
   });
 
-    globalShortcut.register('Option+Shift+B', () => {
+    globalShortcut.register('Option+Shift+;', () => {
       console.log("Toggling response box color");
       mainWindow.webContents.send('toggle-color');
     });
 
-  let moveSpeed = 50;
+  let moveSpeed = 250;
   globalShortcut.register('Option+Shift+Up', () => moveWindow(0, -moveSpeed));
   globalShortcut.register('Option+Shift+Down', () => moveWindow(0, moveSpeed));
   globalShortcut.register('Option+Shift+Left', () => moveWindow(-moveSpeed, 0));
@@ -107,7 +119,7 @@ ipcMain.on('user-input', async (event, prompt) => {
     if (prompt.toLowerCase().includes("design") || prompt.toLowerCase().includes("architecture")) {
       modifiedPrompt += "If it's a system design question, give a Low-Level Design (LLD) solution in Java with proper classes, methods, and relationships.";
     } else {
-      modifiedPrompt += "If it's a coding problem, provide an optimized C++ using namespace std ,solution with comments space time complexity and an explanation";
+      modifiedPrompt += "If it's a coding problem, provide an optimized C++ using namespace std or Java as mentioned ,solution with comments space time complexity and an explanation";
     }
     modifiedPrompt += "\nKeep the total response under 800 tokens.";
 
@@ -118,7 +130,7 @@ ipcMain.on('user-input', async (event, prompt) => {
       max_tokens: 800,
     });
 
-//     const response = config;
+//   const response = config;
 
 
         console.log("OpenAI response received" , response.choices[0].message.content);
@@ -137,7 +149,7 @@ ipcMain.on('adjust-window-height', (event, newHeight) => {
     mainWindow.setBounds({
       x: bounds.x,
       y: bounds.y,
-      width: bounds.width,
+      width: bounds.width ,
       height: Math.round(newHeight)
     });
     console.log(`Adjusted window height to ${newHeight}px`);
@@ -154,6 +166,7 @@ app.whenReady().then(() => {
     mainWindow.webContents.send('search-chatgpt', text);
   });
 });
+
 
 app.on('window-all-closed', () => {
   console.log("All windows closed, unregistering shortcuts...");
